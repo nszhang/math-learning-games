@@ -11,8 +11,16 @@ export async function GET(request: Request) {
   console.log('📋 Callback params:', { code: code?.substring(0, 10) + '...', next, origin })
 
   if (code) {
+    console.log('🔑 Code received, attempting to exchange for session...')
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (error) {
+      console.error('❌ Error exchanging code for session:', error)
+    } else {
+      console.log('✅ Successfully exchanged code for session:', { user: data.user?.email })
+    }
+    
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development'
@@ -25,8 +33,11 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}${next}`)
       }
     }
+  } else {
+    console.error('❌ No authorization code received in callback')
   }
 
   // return the user to an error page with instructions
+  console.log('🔄 Redirecting to error page')
   return NextResponse.redirect(`${origin}/auth/auth-code-error`)
 }
