@@ -1,5 +1,7 @@
 import Dexie, { Table } from 'dexie';
 import { GameSession, UserProgress, Badge, GameType } from '@/types';
+import { SupabaseGameStatsService } from './supabase-database';
+import { User } from '@supabase/supabase-js';
 
 // Database interfaces
 export interface DBGameSession {
@@ -296,5 +298,152 @@ export class GameStatsService {
       db.badges.clear();
       db.levelProgress.clear();
     });
+  }
+}
+
+// Unified Database Service that chooses between Supabase and Dexie
+export class UnifiedGameStatsService {
+  
+  // Save a completed game session
+  static async saveGameSession(session: GameSession, user?: User | null): Promise<void> {
+    try {
+      if (user) {
+        // User is authenticated, use Supabase
+        await SupabaseGameStatsService.saveGameSession(session, user);
+      } else {
+        // User is not authenticated, use local Dexie database
+        await GameStatsService.saveGameSession(session);
+      }
+    } catch (error) {
+      console.error('Error saving game session:', error);
+      // Fallback to local storage if Supabase fails
+      if (user) {
+        await GameStatsService.saveGameSession(session);
+      }
+    }
+  }
+
+  // Get user progress for display
+  static async getUserProgress(user?: User | null): Promise<UserProgress> {
+    try {
+      if (user) {
+        // User is authenticated, use Supabase
+        return await SupabaseGameStatsService.getUserProgress(user);
+      } else {
+        // User is not authenticated, use local Dexie database
+        return await GameStatsService.getUserProgress();
+      }
+    } catch (error) {
+      console.error('Error getting user progress:', error);
+      // Fallback to local storage if Supabase fails
+      return await GameStatsService.getUserProgress();
+    }
+  }
+
+  // Save new badges
+  static async saveBadges(badges: Badge[], user?: User | null): Promise<void> {
+    try {
+      if (user) {
+        // User is authenticated, use Supabase
+        await SupabaseGameStatsService.saveBadges(badges, user);
+      } else {
+        // User is not authenticated, use local Dexie database
+        await GameStatsService.saveBadges(badges);
+      }
+    } catch (error) {
+      console.error('Error saving badges:', error);
+      // Fallback to local storage if Supabase fails
+      if (user) {
+        await GameStatsService.saveBadges(badges);
+      }
+    }
+  }
+
+  // Get game history
+  static async getGameHistory(user?: User | null, limit: number = 10): Promise<any[]> {
+    try {
+      if (user) {
+        // User is authenticated, use Supabase
+        return await SupabaseGameStatsService.getGameHistory(user, limit);
+      } else {
+        // User is not authenticated, use local Dexie database
+        return await GameStatsService.getGameHistory(limit);
+      }
+    } catch (error) {
+      console.error('Error getting game history:', error);
+      // Fallback to local storage if Supabase fails
+      return await GameStatsService.getGameHistory(limit);
+    }
+  }
+
+  // Get statistics for a specific game type
+  static async getGameTypeStats(gameType: GameType, user?: User | null): Promise<{
+    totalGames: number;
+    totalCorrect: number;
+    totalQuestions: number;
+    averageScore: number;
+    bestStreak: number;
+  }> {
+    try {
+      if (user) {
+        // User is authenticated, use Supabase
+        return await SupabaseGameStatsService.getGameTypeStats(gameType, user);
+      } else {
+        // User is not authenticated, use local Dexie database
+        return await GameStatsService.getGameTypeStats(gameType);
+      }
+    } catch (error) {
+      console.error('Error getting game type stats:', error);
+      // Fallback to local storage if Supabase fails
+      return await GameStatsService.getGameTypeStats(gameType);
+    }
+  }
+
+  // Migrate local data to Supabase when user signs in
+  static async migrateLocalDataToSupabase(user: User): Promise<void> {
+    try {
+      // Get all local data
+      const localProgress = await GameStatsService.getUserProgress();
+      const localSessions = await GameStatsService.getGameHistory(1000); // Get all sessions
+      
+      // Initialize Supabase user stats
+      await SupabaseGameStatsService.initializeUserStats(user);
+      
+      // For each local session, we need to reconstruct the GameSession object
+      // This is a simplified version - you might need to adjust based on your GameSession structure
+      for (const localSession of localSessions) {
+        // Create a mock GameSession object from the stored data
+        const gameSession: GameSession = {
+          id: localSession.sessionId,
+          config: {
+            type: localSession.gameType,
+            difficulty: localSession.difficulty,
+            questionCount: localSession.totalQuestions,
+            timeLimit: 0 // Default, since we don't store this
+          },
+          questions: [], // We don't store individual questions, so this will be empty
+          score: localSession.score,
+          startTime: localSession.completedAt - localSession.timeSpent,
+          endTime: localSession.completedAt,
+          isCompleted: true
+        };
+        
+        // Save to Supabase (but skip the individual question processing since we don't have that data)
+        try {
+          await SupabaseGameStatsService.saveGameSession(gameSession, user);
+        } catch (error) {
+          console.error('Error migrating session:', error);
+        }
+      }
+      
+      // Migrate badges
+      if (localProgress.badges.length > 0) {
+        await SupabaseGameStatsService.saveBadges(localProgress.badges, user);
+      }
+      
+      console.log('Local data migration completed');
+    } catch (error) {
+      console.error('Error migrating local data to Supabase:', error);
+    }
   }
 }

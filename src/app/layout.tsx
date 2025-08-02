@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import { UserProvider } from '@/hooks/useUser'
+import ClientLayout from '@/components/ClientLayout'
 
 export const metadata: Metadata = {
   title: "Math Fun Games - Learn Math Through Play!",
@@ -15,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="min-h-screen">
-          {children}
-        </div>
+        <UserProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </UserProvider>
       </body>
     </html>
   )
