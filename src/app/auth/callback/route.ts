@@ -2,10 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
+  console.log('🔍 Auth callback triggered with URL:', request.url)
+  
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  // if "next" is in param, use it as the redirect URL
   const next = searchParams.get('next') ?? '/'
+  
+  console.log('📋 Callback params:', { code: code?.substring(0, 10) + '...', next, origin })
 
   if (code) {
     const supabase = await createClient()
