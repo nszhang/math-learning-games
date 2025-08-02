@@ -142,7 +142,7 @@ export class GameStatsService {
     const wasAllCorrect = correctAnswers === session.questions.length;
     
     // Calculate new streak (only if all questions in session were correct)
-    let newCurrentStreak = wasAllCorrect ? currentStats.currentStreak + correctAnswers : 0;
+    const newCurrentStreak = wasAllCorrect ? currentStats.currentStreak + correctAnswers : 0;
 
     await db.userStats.update(currentStats.id!, {
       totalGamesPlayed: currentStats.totalGamesPlayed + 1,

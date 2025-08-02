@@ -40,7 +40,7 @@ export interface SupabaseBadge {
   icon: string;
   color: string;
   unlocked_at: string;
-  criteria: any; // JSONB field
+  criteria: Record<string, unknown>; // JSONB field
   created_at?: string;
 }
 
@@ -138,7 +138,7 @@ export class SupabaseGameStatsService {
     const wasAllCorrect = correctAnswers === session.questions.length;
     
     // Calculate new streak (only if all questions in session were correct)
-    let newCurrentStreak = wasAllCorrect ? currentStats.current_streak + correctAnswers : 0;
+    const newCurrentStreak = wasAllCorrect ? currentStats.current_streak + correctAnswers : 0;
 
     await this.supabase
       .from('user_stats')
