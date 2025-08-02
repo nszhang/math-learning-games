@@ -37,17 +37,40 @@ export async function GET(request: Request) {
       if (isLocalEnv) {
         // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
         redirectUrl = `${origin}${next}`
-        console.log('🏠 Local environment redirect:', redirectUrl)
-        return NextResponse.redirect(redirectUrl)
       } else if (forwardedHost) {
         redirectUrl = `https://${forwardedHost}${next}`
-        console.log('🌐 Forwarded host redirect:', redirectUrl)
-        return NextResponse.redirect(redirectUrl)
       } else {
         redirectUrl = `${origin}${next}`
-        console.log('🌍 Origin redirect:', redirectUrl)
-        return NextResponse.redirect(redirectUrl)
       }
+      
+      console.log('✨ Using client-side redirect to:', redirectUrl)
+      
+      // Return HTML page with JavaScript redirect to avoid middleware conflicts
+      return new Response(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Redirecting...</title>
+            <script>
+              console.log('Auth successful, redirecting to: ${redirectUrl}');
+              window.location.href = '${redirectUrl}';
+            </script>
+          </head>
+          <body>
+            <p>Authentication successful! Redirecting...</p>
+            <script>
+              // Fallback in case the first redirect doesn't work
+              setTimeout(() => {
+                window.location.replace('${redirectUrl}');
+              }, 1000);
+            </script>
+          </body>
+        </html>
+      `, {
+        headers: {
+          'Content-Type': 'text/html',
+        },
+      })
     }
   } else {
     console.error('❌ No authorization code received in callback')
