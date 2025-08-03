@@ -22,59 +22,40 @@ export async function GET(request: Request) {
       if (error) {
         console.error('❌ Error exchanging code for session:', error)
       } else {
-        console.log('✅ Successfully exchanged code for session:', { user: data.user?.email })
+      console.log('✅ Successfully exchanged code for session:', { user: data.user?.email, hasSession: !!data.session })
       }
       
-      if (!error) {
-      const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      
-      console.log('🔍 Redirect environment check:', { 
-        isLocalEnv, 
-        forwardedHost, 
-        origin, 
-        next,
-        nodeEnv: process.env.NODE_ENV 
-      })
-      
-      let redirectUrl: string
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        redirectUrl = `${origin}${next}`
-      } else if (forwardedHost) {
-        redirectUrl = `https://${forwardedHost}${next}`
+      if (!error && data.user) {
+        const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
+        const isLocalEnv = process.env.NODE_ENV === 'development'
+        
+        console.log('🔍 Redirect environment check:', { 
+          isLocalEnv, 
+          forwardedHost, 
+          origin, 
+          next,
+          nodeEnv: process.env.NODE_ENV,
+          hasUser: !!data.user,
+          userEmail: data.user?.email
+        })
+        
+        // Redirect through the auth success page to ensure session is ready
+        let redirectUrl: string
+        const successPagePath = `/auth/success?next=${encodeURIComponent(next)}`
+        
+        if (isLocalEnv) {
+          redirectUrl = `${origin}${successPagePath}`
+        } else if (forwardedHost) {
+          redirectUrl = `https://${forwardedHost}${successPagePath}`
+        } else {
+          redirectUrl = `${origin}${successPagePath}`
+        }
+        
+        console.log('✨ Successful auth - redirecting through success page to:', redirectUrl)
+        console.log('🎯 Final destination will be:', next)
+        return NextResponse.redirect(redirectUrl)
       } else {
-        redirectUrl = `${origin}${next}`
-      }
-      
-      console.log('✨ Using client-side redirect to:', redirectUrl)
-      
-      // Return HTML page with JavaScript redirect to avoid middleware conflicts
-      return new Response(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Redirecting...</title>
-            <script>
-              console.log('Auth successful, redirecting to: ${redirectUrl}');
-              window.location.href = '${redirectUrl}';
-            </script>
-          </head>
-          <body>
-            <p>Authentication successful! Redirecting...</p>
-            <script>
-              // Fallback in case the first redirect doesn't work
-              setTimeout(() => {
-                window.location.replace('${redirectUrl}');
-              }, 1000);
-            </script>
-          </body>
-        </html>
-      `, {
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      })
+        console.error('❌ Auth failed - no user data or error occurred:', { error: error?.message, hasUser: !!data?.user })
       }
     } catch (err) {
       console.error('💥 Exception in code exchange:', err)

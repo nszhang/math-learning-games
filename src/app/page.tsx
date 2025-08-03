@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import Dashboard from "@/components/Dashboard";
 import DifficultySelector from "@/components/DifficultySelector";
 import GameScreen from "@/components/GameScreen";
@@ -9,13 +10,28 @@ import { GameType, GameConfig, GameSession } from "@/types";
 import { calculateScore, checkForNewBadges } from "@/lib/gameUtils";
 import { GameStatsService } from "@/lib/database";
 
+import ServerAuthWrapper from '@/components/ServerAuthWrapper';
+
 export default function Home() {
+  const searchParams = useSearchParams();
+  const fromAuth = searchParams.get('fromAuth') === 'true';
+  
   const [currentScreen, setCurrentScreen] = useState<"dashboard" | "difficulty" | "game" | "results">(
     "dashboard",
   );
   const [selectedGameType, setSelectedGameType] = useState<GameType | null>(null);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
+  
+  // Clean up the URL after detecting the fromAuth parameter
+  useEffect(() => {
+    if (fromAuth) {
+      // Remove the fromAuth parameter from the URL without triggering a page reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('fromAuth');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [fromAuth]);
 
   function handleGameSelect(gameType: GameType) {
     setSelectedGameType(gameType);
@@ -101,5 +117,13 @@ export default function Home() {
     );
   }
 
-  return <Dashboard onGameSelect={handleGameSelect} />;
+return (
+    <ServerAuthWrapper 
+      expectAuthenticated={fromAuth}
+      maxRetries={fromAuth ? 8 : 3}
+      retryDelay={1000}
+    >
+      <Dashboard onGameSelect={handleGameSelect} />
+    </ServerAuthWrapper>
+  );
 }
