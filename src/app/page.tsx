@@ -10,7 +10,7 @@ import { GameType, GameConfig, GameSession } from "@/types";
 import { calculateScore, checkForNewBadges } from "@/lib/gameUtils";
 import { GameStatsService } from "@/lib/database";
 
-import ServerAuthWrapper from '@/components/ServerAuthWrapper';
+import MinimalAuthWrapper from '@/components/MinimalAuthWrapper';
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -118,12 +118,10 @@ export default function Home() {
   }
 
 return (
-    <ServerAuthWrapper 
+    <MinimalAuthWrapper 
       expectAuthenticated={fromAuth}
-      maxRetries={fromAuth ? 8 : 3}
-      retryDelay={1000}
     >
       <Dashboard onGameSelect={handleGameSelect} />
-    </ServerAuthWrapper>
+    </MinimalAuthWrapper>
   );
 }

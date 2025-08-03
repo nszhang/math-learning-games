@@ -39,20 +39,19 @@ export async function GET(request: Request) {
           userEmail: data.user?.email
         })
         
-        // Redirect through the auth success page to ensure session is ready
+        // Redirect to minimal test page for testing
         let redirectUrl: string
-        const successPagePath = `/auth/success?next=${encodeURIComponent(next)}`
+        const mainPagePath = `/test-minimal-auth`
         
         if (isLocalEnv) {
-          redirectUrl = `${origin}${successPagePath}`
+          redirectUrl = `${origin}${mainPagePath}`
         } else if (forwardedHost) {
-          redirectUrl = `https://${forwardedHost}${successPagePath}`
+          redirectUrl = `https://${forwardedHost}${mainPagePath}`
         } else {
-          redirectUrl = `${origin}${successPagePath}`
+          redirectUrl = `${origin}${mainPagePath}`
         }
         
-        console.log('✨ Successful auth - redirecting through success page to:', redirectUrl)
-        console.log('🎯 Final destination will be:', next)
+        console.log('✨ Successful auth - redirecting directly to main page:', redirectUrl)
         return NextResponse.redirect(redirectUrl)
       } else {
         console.error('❌ Auth failed - no user data or error occurred:', { error: error?.message, hasUser: !!data?.user })
