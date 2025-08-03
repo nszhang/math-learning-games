@@ -84,7 +84,7 @@ export default function AuthForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+          redirectTo: `${window.location.origin}/auth/callback-debug?next=${encodeURIComponent(redirectTo)}`
         }
       });
 
@@ -106,7 +106,7 @@ export default function AuthForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+          redirectTo: `${window.location.origin}/auth/callback-debug?next=${encodeURIComponent(redirectTo)}`
         }
       });
 

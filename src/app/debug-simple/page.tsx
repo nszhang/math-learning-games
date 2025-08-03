@@ -1,4 +1,13 @@
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
 export default function DebugSimple() {
+  const searchParams = useSearchParams()
+  const callback = searchParams.get('callback')
+  const hasCode = searchParams.get('hasCode')
+  const hasError = searchParams.get('hasError')
+  
   return (
     <div className="min-h-screen p-8 bg-blue-50">
       <div className="max-w-2xl mx-auto text-center">
@@ -17,6 +26,17 @@ export default function DebugSimple() {
             <li>✅ No authentication wrapper interference</li>
           </ul>
         </div>
+        
+        {callback && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <h2 className="font-semibold text-green-800 mb-2">Callback Info:</h2>
+            <div className="text-sm text-green-700 space-y-1">
+              <p>Callback: {callback}</p>
+              <p>Has Code: {hasCode}</p>
+              <p>Has Error: {hasError}</p>
+            </div>
+          </div>
+        )}
         
         <div className="space-y-4">
           <p className="text-gray-600">
