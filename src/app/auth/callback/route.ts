@@ -39,9 +39,9 @@ export async function GET(request: Request) {
           userEmail: data.user?.email
         })
         
-        // Redirect to minimal test page for testing
+        // Redirect to simple debug page first to verify redirect works
         let redirectUrl: string
-        const mainPagePath = `/test-minimal-auth`
+        const mainPagePath = `/debug-simple`
         
         if (isLocalEnv) {
           redirectUrl = `${origin}${mainPagePath}`
