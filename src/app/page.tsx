@@ -10,11 +10,21 @@ import { GameType, GameConfig, GameSession } from "@/types";
 import { calculateScore, checkForNewBadges } from "@/lib/gameUtils";
 import { GameStatsService } from "@/lib/database";
 
-import MinimalAuthWrapper from '@/components/MinimalAuthWrapper';
+import RobustAuthWrapper from '@/components/RobustAuthWrapper';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import DebugConsole from '@/components/DebugConsole';
+import LoadingMonitor from '@/components/LoadingMonitor';
 
 export default function Home() {
+  const renderStartTime = performance.now();
+  console.log('🏠 Home component: Starting render at', new Date().toISOString());
+  console.log('🕰️ Home component: Render start time:', renderStartTime);
+  
   const searchParams = useSearchParams();
   const fromAuth = searchParams.get('fromAuth') === 'true';
+  
+  console.log('🔍 Home component: fromAuth =', fromAuth);
+  console.log('🔍 Home component: searchParams =', Object.fromEntries(searchParams.entries()));
   
   const [currentScreen, setCurrentScreen] = useState<"dashboard" | "difficulty" | "game" | "results">(
     "dashboard",
@@ -23,19 +33,33 @@ export default function Home() {
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [gameSession, setGameSession] = useState<GameSession | null>(null);
   
+  console.log('📱 Home component: currentScreen =', currentScreen);
+  
   // Clean up the URL after detecting the fromAuth parameter
   useEffect(() => {
+    console.log('🔄 Home component: useEffect triggered for URL cleanup');
     if (fromAuth) {
+      console.log('🧹 Home component: Cleaning up fromAuth parameter from URL');
       // Remove the fromAuth parameter from the URL without triggering a page reload
       const url = new URL(window.location.href);
       url.searchParams.delete('fromAuth');
       window.history.replaceState({}, '', url.toString());
+      console.log('✅ Home component: URL cleanup complete');
     }
   }, [fromAuth]);
+  
+  // Log render completion
+  useEffect(() => {
+    const renderEndTime = performance.now();
+    console.log('🏠 Home component: Render completed at', new Date().toISOString());
+    console.log('🕰️ Home component: Render duration:', (renderEndTime - renderStartTime).toFixed(2), 'ms');
+  });
 
   function handleGameSelect(gameType: GameType) {
+    console.log('🎮 Home component: Game selected:', gameType);
     setSelectedGameType(gameType);
     setCurrentScreen("difficulty");
+    console.log('📱 Home component: Screen changed to difficulty');
   }
 
   function handleDifficultySelect(difficulty: "easy" | "medium" | "hard") {
@@ -89,7 +113,10 @@ export default function Home() {
     }
   }
 
+  console.log('🔄 Home component: About to render, currentScreen =', currentScreen);
+  
   if (currentScreen === "difficulty" && selectedGameType) {
+    console.log('📱 Home component: Rendering DifficultySelector for', selectedGameType);
     return (
       <DifficultySelector
         gameType={selectedGameType}
@@ -100,10 +127,12 @@ export default function Home() {
   }
 
   if (currentScreen === "game" && gameConfig) {
+    console.log('🎮 Home component: Rendering GameScreen with config:', gameConfig);
     return <GameScreen config={gameConfig} onGameComplete={handleGameComplete} onBack={handleBackToDashboard} />;
   }
 
   if (currentScreen === "results" && gameSession) {
+    console.log('🏆 Home component: Rendering GameResults');
     const score = calculateScore(gameSession.questions);
     const newBadges = checkForNewBadges(score, gameSession.config.type, []);
     
@@ -117,11 +146,18 @@ export default function Home() {
     );
   }
 
-return (
-    <MinimalAuthWrapper 
-      expectAuthenticated={fromAuth}
-    >
-      <Dashboard onGameSelect={handleGameSelect} />
-    </MinimalAuthWrapper>
+  console.log('🏠 Home component: Rendering Dashboard with MinimalAuthWrapper');
+  console.log('🔐 Home component: expectAuthenticated =', fromAuth);
+  
+  return (
+    <ErrorBoundary>
+      <RobustAuthWrapper 
+        expectAuthenticated={fromAuth}
+      >
+        <Dashboard onGameSelect={handleGameSelect} />
+      </RobustAuthWrapper>
+      <DebugConsole />
+      <LoadingMonitor />
+    </ErrorBoundary>
   );
 }

@@ -48,8 +48,14 @@ const gameConfig = {
 };
 
 export default function GameCard({ gameType, onPlay, isLocked = false }: GameCardProps) {
+  console.log('🃏 GameCard: Rendering card for', gameType);
+  console.log('🃏 GameCard: onPlay function =', typeof onPlay);
+  console.log('🃏 GameCard: isLocked =', isLocked);
+  
   const config = gameConfig[gameType];
   const IconComponent = config.icon;
+  
+  console.log('🃏 GameCard: Config =', config);
 
   return (
     <motion.div
@@ -89,7 +95,12 @@ export default function GameCard({ gameType, onPlay, isLocked = false }: GameCar
           </p>
           
           <Button
-            onClick={() => onPlay(gameType)}
+            onClick={() => {
+              console.log('🃏 GameCard: Play button clicked for', gameType);
+              console.log('🃏 GameCard: Calling onPlay with', gameType);
+              onPlay(gameType);
+              console.log('🃏 GameCard: onPlay called successfully');
+            }}
             disabled={isLocked}
             className={`btn-game ${config.color} w-full flex items-center justify-center gap-3`}
           >

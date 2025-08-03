@@ -15,6 +15,10 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onGameSelect, onViewStats }: DashboardProps) {
+  console.log('📊 Dashboard: Component initializing');
+  console.log('📊 Dashboard: onGameSelect =', typeof onGameSelect);
+  console.log('📊 Dashboard: onViewStats =', typeof onViewStats);
+  
   const [progress, setProgress] = useState<UserProgress>({
     totalGamesPlayed: 0,
     totalCorrectAnswers: 0,
@@ -28,15 +32,22 @@ export default function Dashboard({ onGameSelect, onViewStats }: DashboardProps)
       division: { easy: 0, medium: 0, hard: 0 },
     }
   });
+  
+  console.log('📊 Dashboard: Initial progress state set');
+  console.log('📊 Dashboard: Current progress =', progress);
 
   useEffect(() => {
+    console.log('📊 Dashboard: useEffect triggered for loading progress');
     // Load progress from IndexedDB
     const loadProgress = async () => {
       try {
+        console.log('📊 Dashboard: Starting to load user progress...');
         const userProgress = await GameStatsService.getUserProgress();
+        console.log('📊 Dashboard: User progress loaded:', userProgress);
         setProgress(userProgress);
+        console.log('📊 Dashboard: Progress state updated');
       } catch (error) {
-        console.error('Failed to load user progress:', error);
+        console.error('❌ Dashboard: Failed to load user progress:', error);
       }
     };
     
@@ -44,6 +55,9 @@ export default function Dashboard({ onGameSelect, onViewStats }: DashboardProps)
   }, []);
 
   const gameTypes: GameType[] = ['addition', 'subtraction', 'multiplication', 'division'];
+  
+  console.log('📊 Dashboard: About to render dashboard');
+  console.log('📊 Dashboard: gameTypes =', gameTypes);
 
   return (
     <div className="min-h-screen p-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
