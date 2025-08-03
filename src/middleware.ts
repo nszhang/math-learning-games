@@ -2,10 +2,7 @@ import { type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  // Temporarily disabled for testing
-  console.log('🚫 Middleware disabled for testing - allowing all requests through')
-  return
-  // return await updateSession(request)
+  return await updateSession(request)
 }
 
 export const config = {
