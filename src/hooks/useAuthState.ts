@@ -167,12 +167,41 @@ export function useAuthState(options: UseAuthStateOptions = {}) {
     console.log('🚀 useAuthState: Hook initialized');
     console.log('🚀 useAuthState: expectAuthenticated =', expectAuthenticated);
     
-    const delay = expectAuthenticated ? 1000 : 0;
-    console.log(`⏰ useAuthState: Starting auth check with ${delay}ms delay`);
+    // Check for auth success cookie first
+    const checkAuthCookie = () => {
+      if (typeof window !== 'undefined') {
+        const authSuccess = document.cookie.includes('auth-success=true');
+        const userEmail = document.cookie.match(/user-email=([^;]+)/)?.[1];
+        
+        if (authSuccess && userEmail) {
+          console.log('🍪 useAuthState: Found auth success cookie for', decodeURIComponent(userEmail));
+          
+          // Clear the temporary cookies
+          document.cookie = 'auth-success=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          document.cookie = 'user-email=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    // Check URL for delay parameter
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const delayParam = urlParams?.get('delay');
+    const customDelay = delayParam ? parseInt(delayParam, 10) : 0;
+    
+    let baseDelay = expectAuthenticated ? 1000 : 0;
+    const totalDelay = Math.max(baseDelay, customDelay);
+    
+    console.log(`⏰ useAuthState: Starting auth check with ${totalDelay}ms delay (base: ${baseDelay}, custom: ${customDelay})`);
+    
+    // If we have auth success cookie, use shorter delay but still allow session to settle
+    const effectiveDelay = checkAuthCookie() ? Math.min(totalDelay, 1500) : totalDelay;
     
     const timeoutId = setTimeout(() => {
       checkAuth(1);
-    }, delay);
+    }, effectiveDelay);
 
     return () => {
       console.log('🧹 useAuthState: Cleaning up');

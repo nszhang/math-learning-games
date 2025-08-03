@@ -42,13 +42,33 @@ export async function GET(request: Request) {
           hasSession: !!data.session 
         })
         
-        // Wait a brief moment for session to be properly set
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Create response with session persistence
+        const redirectUrl = `${origin}/?fromAuth=true&delay=2000`
+        const response = NextResponse.redirect(redirectUrl)
         
-        // Redirect directly to main page
-        const redirectUrl = `${origin}/?fromAuth=true`
+        // Set additional session indicators to help with timing
+        if (data.session?.access_token) {
+          // Set a temporary flag cookie that the client can check
+          response.cookies.set('auth-success', 'true', {
+            httpOnly: false, // Allow client-side access
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 300 // 5 minutes
+          })
+          
+          response.cookies.set('user-email', data.user.email || '', {
+            httpOnly: false, // Allow client-side access
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 300 // 5 minutes
+          })
+        }
+        
+        // Wait longer for session to propagate
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
         console.log('✨ Successful auth - redirecting to:', redirectUrl)
-        return NextResponse.redirect(redirectUrl)
+        return response
       } else {
         console.error('❌ Auth failed - no user data')
         return NextResponse.redirect(`${origin}/login?error=no_user`)

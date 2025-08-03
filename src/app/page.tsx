@@ -39,10 +39,11 @@ export default function Home() {
   useEffect(() => {
     console.log('🔄 Home component: useEffect triggered for URL cleanup');
     if (fromAuth) {
-      console.log('🧹 Home component: Cleaning up fromAuth parameter from URL');
-      // Remove the fromAuth parameter from the URL without triggering a page reload
+      console.log('🧹 Home component: Cleaning up auth parameters from URL');
+      // Remove both fromAuth and delay parameters from the URL
       const url = new URL(window.location.href);
       url.searchParams.delete('fromAuth');
+      url.searchParams.delete('delay');
       window.history.replaceState({}, '', url.toString());
       console.log('✅ Home component: URL cleanup complete');
     }
